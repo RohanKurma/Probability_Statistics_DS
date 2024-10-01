@@ -1,0 +1,71 @@
+
+
+```{r}
+autompg <- read.csv("E:/UTA_Assignments/ProbabilityStatistics/2018.csv/auto-mpg.csv")
+```
+
+```{r}
+head(data1)
+```
+
+```{r}
+mean(autompg$mpg)
+
+```
+
+```{r}
+sd(autompg$mpg)
+```
+
+```{r}
+ fivenum(autompg$mpg)
+```
+
+```{r}
+summary(autompg$mpg)
+```
+```{r}
+boxplot(autompg$mpg,
+        main = "Boxplot of MPG",
+        ylab = "Miles per Gallon (MPG)",
+        col = "lightblue",
+        border = "black")
+grid()
+```
+```{r}
+# Load dplyr package
+library(dplyr)
+
+# Create frequency table using dplyr
+frequency_df <- autompg %>%
+  group_by(mpg) %>%
+  summarise(Frequency = n())
+
+# Display the frequency table
+print(frequency_df)
+
+```
+
+```{r}
+frequency_df <- autompg %>%
+  mutate(MPG_range = cut(mpg, breaks = 9)) %>%
+  group_by(MPG_range) %>%
+  summarise(Frequency = n())
+
+# Display the frequency table
+print(frequency_df)
+```
+
+```{r}
+hist(frequency_df$`MPG Range`, frequency_df$Frequency)
+```
+```{r}
+hist(autompg$mpg, 
+     breaks = 12, 
+     main = "Histogram of MPG", 
+     xlab = "Miles per Gallon (MPG)", 
+     ylab = "Frequency", 
+     col = "lightblue", 
+     border = "black")
+```
+

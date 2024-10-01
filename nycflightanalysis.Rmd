@@ -1,0 +1,183 @@
+```{r}
+# Load necessary libraries
+library(nycflights13)
+library(dplyr)
+
+# Specify the date you want to analyze
+target_date <- as.Date("2013-12-15")
+
+# Filter the flights dataset for flights arriving on the target date at JFK
+flights_dec15_jfk <- flights %>%
+  filter(month == 12, day == 15) %>%  # Filter for December 15 and non-delayed arrivals
+  select(arr_time) %>%                                  # Select the arrival time column
+  na.omit()                                             # Remove NA values
+
+# Convert arr_time to a proper time format
+flights_dec15_jfk$arr_time <- sprintf("%04d", flights_dec15_jfk$arr_time) # Pad with zeros
+flights_dec15_jfk$arr_time <- as.POSIXct(flights_dec15_jfk$arr_time, format="%H%M", tz="UTC")
+
+# Sort the arrival times
+flights_dec15_jfk <- flights_dec15_jfk %>%
+  arrange(arr_time)
+
+# Calculate inter-arrival times (in seconds)
+inter_arrival_times_dec15 <- as.numeric(diff(flights_dec15_jfk$arr_time))
+
+# Print results
+results_dec15 <- data.frame(Event_Time = flights_dec15_jfk$arr_time[-1], Inter_Arrival_Time_Seconds = inter_arrival_times_dec15)
+print(head(results_dec15, 10))  # Display the first 10 results
+
+```
+
+```{r}
+unique(results_dec15$Inter_Arrival_Time_Seconds)
+```
+```{r}
+mean(results_dec15$Inter_Arrival_Time_Seconds)
+```
+```{r}
+sd(results_dec15$Inter_Arrival_Time_Seconds)
+```
+
+
+```{r}
+summary(results_dec15$Inter_Arrival_Time_Seconds)
+```
+```{r}
+boxplot(results_dec15$Inter_Arrival_Time_Seconds)
+```
+
+
+```{r}
+num_bins <- 5
+
+# Find the maximum inter-arrival time to determine bin ranges
+max_time <- max(inter_arrival_times_dec15)
+
+# Create bins manually
+bin_width <- ceiling(max_time / num_bins)  # Width of each bin
+bins <- seq(0, bin_width * num_bins, by = bin_width)  # Create bin edges
+
+# Initialize a frequency vector to count occurrences in each bin
+frequency <- numeric(length(bins) - 1)
+
+# Count the occurrences in each bin
+for (time in inter_arrival_times_dec15) {
+  for (i in 1:(length(bins) - 1)) {
+    if (time > bins[i] && time <= bins[i + 1]) {
+      frequency[i] <- frequency[i] + 1  # Increment the corresponding bin count
+    }
+  }
+}
+
+# Create a data frame for results
+frequency_df_binned <- data.frame(
+  Inter_Arrival_Time_Bins = paste(bins[-length(bins)], bins[-1], sep = " to "),
+  Frequency = frequency
+)
+
+# Print the frequency table
+print(frequency_df_binned)
+```
+```{r}
+# Assuming you have the vector `inter_arrival_times_dec15` containing the inter-arrival times
+
+# Step 1: Calculate the IQR to identify outliers
+Q1 <- quantile(inter_arrival_times_dec15, 0.25)  # First quartile
+Q3 <- quantile(inter_arrival_times_dec15, 0.75)  # Third quartile
+IQR <- Q3 - Q1                                    # Interquartile range
+
+# Define the bounds for outlier detection
+lower_bound <- Q1 - 1.5 * IQR  # Lower bound
+upper_bound <- Q3 + 1.5 * IQR  # Upper bound
+
+# Step 2: Replace outliers with the maximum value
+max_value <- max(inter_arrival_times_dec15)  # Calculate the maximum value
+inter_arrival_times_replaced <- inter_arrival_times_dec15  # Create a copy of the original data
+
+# Replace outliers with the maximum value
+inter_arrival_times_replaced[inter_arrival_times_replaced > upper_bound] <- upper_bound
+
+# Step 3: Calculate the frequency table for the modified data
+
+# Define the number of bins
+num_bins <- 6
+
+# Find the maximum inter-arrival time after replacement
+max_time <- max(inter_arrival_times_replaced)
+
+# Create bins manually
+bin_width <- ceiling(max_time / num_bins)  # Width of each bin
+bins <- seq(0, bin_width * num_bins, by = bin_width)  # Create bin edges
+
+# Initialize a frequency vector to count occurrences in each bin
+frequency <- numeric(length(bins) - 1)
+
+# Count the occurrences in each bin
+for (time in inter_arrival_times_replaced) {
+  for (i in 1:(length(bins) - 1)) {
+    if (time > bins[i] && time <= bins[i + 1]) {
+      frequency[i] <- frequency[i] + 1  # Increment the corresponding bin count
+    }
+  }
+}
+
+# Create a data frame for results
+frequency_df_binned <- data.frame(
+  Inter_Arrival_Time_Bins = paste(bins[-length(bins)], bins[-1], sep = " to "),
+  Frequency = frequency
+)
+
+# Print the frequency table
+print(frequency_df_binned)
+
+```
+
+```{r}
+hist_result <- hist(inter_arrival_times_replaced,
+                    breaks = num_bins,                # Number of bins
+                    main = "Frequency Histogram of Inter-Arrival Times",
+                    xlab = "Inter-Arrival Time (seconds)",
+                    ylab = "Frequency",
+                    col = "lightblue",
+                    border = "black",
+                    plot = TRUE)
+
+# Step 4: Add frequency values on the bars
+# Loop through the counts and add text labels
+for (i in 1:length(hist_result$counts)) {
+  text(hist_result$mids[i], hist_result$counts[i] + 1, 
+       labels = hist_result$counts[i], 
+       pos = 3, cex = 0.8, col = "black")  # Adjust `pos` for label positioning
+}
+
+# Optionally, add a title
+```
+```{r}
+frequency_df_binned$Frequency<- hist_result$counts
+```
+
+```{r}
+print(frequency_df_binned)
+```
+```{r}
+mean(inter_arrival_times_replaced)
+```
+
+```{r}
+sd(inter_arrival_times_replaced)
+```
+
+```{r}
+boxplot(inter_arrival_times_replaced,
+        main = "Boxplot of Inter Arrival Times",
+        ylab = "Inter Arrival Times",
+        col = "lightblue",
+        border = "black")
+grid()
+```
+
+```{r}
+sd(inter_arrival_times_replaced)
+```
+
